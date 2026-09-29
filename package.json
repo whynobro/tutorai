@@ -1,0 +1,27 @@
+{
+  "name": "tutorai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace @tutorai/contracts && npm run build --workspace @tutorai/api && npm run build --workspace @tutorai/extension",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run build --workspace @tutorai/contracts && npm run test --workspaces --if-present",
+    "dev:api": "npm run dev --workspace @tutorai/api",
+    "dev:extension": "npm run dev --workspace @tutorai/extension",
+    "start:api": "npm run start --workspace @tutorai/api"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.12",
+    "@types/node": "^24.0.0",
+    "concurrently": "^9.2.1",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.2"
+  }
+}

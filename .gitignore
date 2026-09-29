@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+*.log
+coverage/
+plans/**/.plan-url
+.agents/
+.claude/
+.cursor/
+.vscode/
+.mcp.json
+opencode.json

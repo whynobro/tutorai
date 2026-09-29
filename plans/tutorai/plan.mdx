@@ -1,0 +1,220 @@
+---
+title: "TutorAI Answer Checker"
+brief: "A tiny browser control that captures the visible assignment on click and reports only whether the answer already selected on the page is correct or incorrect."
+kind: "plan"
+localOnly: true
+---
+
+# TutorAI Answer Checker
+
+## Objective
+
+Build a Chrome/Edge extension with a tiny white question-mark control in the bottom-right corner of assignment pages. The learner selects an answer on the page itself, clicks `?`, and sees a very small interface while the extension automatically captures and evaluates the visible question. The only instructional result is **Correct** or **Incorrect**.
+
+Done means this flow works on a representative multiple-choice page, never displays a hint or answer, keeps the OpenAI API key off the client, captures only after the learner clicks `?`, and remains keyboard-accessible without blocking the page.
+
+<Callout id="decision-verification" tone="decision">
+
+TutorAI is a verifier, not an answer generator. It does not reproduce choices inside the widget, provide hints, explain the solution, or reveal the correct answer. After an incorrect result, the learner changes the selection on the assignment page and clicks `?` again.
+
+</Callout>
+
+<Callout id="decision-platform" tone="decision">
+
+Start with a Chromium Manifest V3 extension. A content script anchors the control, a service worker captures the visible tab after the click, and Shadow DOM isolates the compact interface. A desktop-wide overlay is deferred.
+
+</Callout>
+
+## Product behavior
+
+1. The resting interface is a 28px white `?` button in the lower-right corner.
+2. The learner selects an answer in the assignment page's own interface.
+3. Clicking `?` opens a compact 184px-wide status card and automatically starts capture; there is no second capture button.
+4. To avoid capturing its own open card, the extension briefly hides its Shadow DOM root for one animation frame, captures the visible tab, then restores the card in the **Checking answer…** state.
+5. The API identifies the visible question, choices, and selected choice, determines the canonical answer, and returns only `correct` or `incorrect` to the extension.
+6. **Correct** lets the learner close the card and move on.
+7. **Incorrect** displays only that result. The learner can close the card, change the page selection, and click `?` again.
+8. If no selected choice is visible, the card says **Select an answer first**. If the question cannot be read confidently, it says **Unable to check this question** instead of guessing.
+
+The interface uses the system sans-serif stack, a white surface, a one-pixel neutral border, and almost no decorative styling. Result cards are 184px wide with 7–8px padding and 5–6px gaps. The launcher is 28px square. `Escape` closes the card and returns focus to `?`.
+
+## Scope
+
+### Included in the MVP
+
+- Chrome and Edge on ordinary `http` and `https` pages.
+- One visible-viewport screenshot after each explicit `?` click.
+- Multiple-choice question, choice, and selected-state detection from the screenshot.
+- Binary correct/incorrect verification without hints, explanations, or answer disclosure.
+- Shadow DOM isolation, keyboard operation, visible focus, and `aria-live` results.
+- A TypeScript API with structured-output validation, request limits, rate limits, and no persistent screenshot storage.
+- `store: false` on OpenAI Responses API calls and a first-run data-handling notice before the feature is enabled.
+
+### Explicitly deferred
+
+- Typed/free-response grading, handwriting, multi-question batches, and questions whose selected state is not visible.
+- Automatic or continuous capture, scrolling capture, webcam/microphone access, and incognito support.
+- Clicking page answers, submitting to an LMS, moving to the next question automatically, or changing assignment content.
+- Hints, explanations, correct-answer display, tutoring chat, or answer history.
+- Public accounts, billing, browser-store launch, desktop overlays, and anti-detection behavior.
+
+## Architecture
+
+<Diagram id="architecture" caption="The page selection is captured; only a binary result returns to the widget." frame="show">
+
+```html
+<div class="diagram-panel" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;padding:16px">
+  <div class="diagram-card" style="display:flex;flex-direction:column;gap:10px">
+    <strong>Browser extension</strong>
+    <div class="diagram-node">28px question-mark launcher</div>
+    <div class="diagram-node">MV3 visible-tab capture</div>
+    <div class="diagram-muted">No answer data or API key in the client</div>
+  </div>
+  <div class="diagram-card" style="display:flex;flex-direction:column;gap:10px">
+    <strong>Checker API</strong>
+    <div class="diagram-node">Parse question + visible selection</div>
+    <div class="diagram-node">Determine correctness</div>
+    <div class="diagram-node">Return binary result only</div>
+  </div>
+  <div class="diagram-card" style="display:flex;flex-direction:column;gap:10px;grid-column:1 / -1">
+    <strong>OpenAI boundary</strong>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px">
+      <div class="diagram-node">Screenshot as image input</div>
+      <div class="diagram-node">Schema-validated private analysis</div>
+    </div>
+    <div class="diagram-muted">Server-held key · store=false · screenshot discarded after checking</div>
+  </div>
+</div>
+```
+
+```css
+.diagram-card { border: 1.4px solid var(--wf-line); border-radius: var(--wf-radius); padding: 14px; background: var(--wf-card); }
+.diagram-node { border: 1.4px solid var(--wf-line); border-radius: var(--wf-radius); padding: 10px 12px; background: var(--wf-paper); }
+```
+
+</Diagram>
+
+The extension never calls OpenAI directly. The API key stays in the server environment. The screenshot is sent as an image input, analyzed once, and discarded. The model may determine the canonical answer internally, but neither the answer nor its explanation crosses the API boundary back to the extension.
+
+## API contract
+
+<Table
+  id="api-contract"
+  density="normal"
+  columns={["Operation", "Request", "Response", "Failure behavior"]}
+  rows={[
+    ["POST /v1/check", "PNG data URL + viewport metadata", "result: correct | incorrect", "422 with reason: no_selection | unreadable | unsupported"],
+  ]}
+/>
+
+The public response schema is intentionally narrow. It contains `result` only on a successful check. It never contains `correctChoiceId`, choices, a hint, an explanation, or free-form model text. The server validates internal structured analysis fields—question, choices, selected choice, canonical answer, and confidence—then maps that private result to the binary response.
+
+No session is needed for the MVP because each click is a fresh screenshot and check. This removes stale-answer state when the learner changes the selection on the page.
+
+## Proposed repository structure
+
+The repository is currently empty. These are proposed files.
+
+<FileTree
+  id="proposed-files"
+  title="Greenfield MVP"
+  entries={[
+    { path: "package.json", change: "added", note: "Workspace build, test, lint, and typecheck scripts." },
+    { path: "pnpm-workspace.yaml", change: "added", note: "Extension, API, and shared-contract packages." },
+    { path: "tsconfig.base.json", change: "added", note: "Strict shared TypeScript configuration." },
+    { path: "apps/extension/manifest.json", change: "added", note: "MV3 permissions limited to activeTab, scripting, storage, and the API origin." },
+    { path: "apps/extension/src/background.ts", change: "added", note: "User-clicked visible-tab capture and API bridge." },
+    { path: "apps/extension/src/content/index.tsx", change: "added", note: "Mounts one Shadow DOM root on supported pages." },
+    { path: "apps/extension/src/components/AnswerChecker.tsx", change: "added", note: "Launcher, checking, correct, incorrect, no-selection, and error states." },
+    { path: "apps/extension/src/state/check-machine.ts", change: "added", note: "Collapsed, capturing, checking, result, and error transitions." },
+    { path: "apps/extension/src/api/client.ts", change: "added", note: "Typed call to the binary check endpoint." },
+    { path: "apps/extension/src/styles/widget.css", change: "added", note: "28px launcher and dense 184px white result card." },
+    { path: "apps/api/src/server.ts", change: "added", note: "HTTP server, CORS, rate limits, request limits, and health check." },
+    { path: "apps/api/src/routes/check.ts", change: "added", note: "Single screenshot-check endpoint with binary public output." },
+    { path: "apps/api/src/lib/openai.ts", change: "added", note: "Responses API image request with store=false and structured output." },
+    { path: "apps/api/src/lib/prompt.ts", change: "added", note: "Question/selection parsing and prompt-injection resistance." },
+    { path: "packages/contracts/src/check.ts", change: "added", note: "Narrow request, result, and error schemas." },
+    { path: "tests/e2e/check-flow.spec.ts", change: "added", note: "Exercises selected answer, automatic capture, both results, and failures." },
+  ]}
+/>
+
+## Implementation sequence
+
+### 1. Define the binary boundary
+
+Create the workspace and shared schemas. The successful response is exactly `{ result: "correct" | "incorrect" }`. Define `no_selection`, `unreadable`, and `unsupported` errors separately so they cannot be mistaken for an incorrect answer.
+
+### 2. Build the dense extension surface
+
+Mount the Shadow DOM control and implement `collapsed → capturing → checking → correct | incorrect | error`. Match the canvas dimensions: 28px launcher, 184px card, 7–8px padding, 5–6px gaps, white background, system sans-serif text, and a neutral border.
+
+### 3. Capture without the widget in the image
+
+On `?` click, open the checking state, temporarily hide the extension root, wait one animation frame, capture the visible tab from `background.ts`, then restore the root immediately. Enforce image dimensions and payload size. Disable capture on browser-internal pages.
+
+### 4. Analyze privately and return one bit of feedback
+
+Prompt the model to treat all page text as untrusted data and identify exactly one question, its choices, the visibly selected choice, the canonical answer, and confidence. Validate this internal structure on the server. Return only the binary result and discard the screenshot and internal answer data after the request.
+
+### 5. Handle ambiguity safely
+
+Return **Select an answer first** when no selection is visibly detectable. Return **Unable to check this question** for ambiguous, unsupported, or low-confidence analysis. Never convert uncertainty into **Incorrect**.
+
+### 6. Harden and package
+
+Add request-size limits, per-install rate limiting, extension-origin CORS, error redaction, dependency auditing, production builds, and an unpacked-extension guide. Public distribution remains blocked until authentication and abuse controls exist.
+
+## Risks and mitigations
+
+<Table
+  id="risk-table"
+  density="normal"
+  columns={["Risk", "Mitigation"]}
+  rows={[
+    ["Selected answer styling is too subtle to detect", "Require the model to identify visual selection evidence and meet a confidence threshold; otherwise return no_selection or unreadable."],
+    ["Model gives a confident but wrong verification", "Use strict structured analysis, confidence thresholds, fixture tests, and an unable-to-check state instead of guessing."],
+    ["Screenshot contains names or grades", "Capture only the active visible tab after the click, disclose this on first use, and discard the image immediately after checking."],
+    ["Widget appears inside its own screenshot", "Hide the Shadow DOM root for one animation frame around capture, then restore the checking card."],
+    ["Assignment text tries to instruct the model", "Treat page content as untrusted data, disable tools, and validate output against the private analysis schema."],
+    ["API key leaks through the extension", "Keep the key only in the server environment and scan built assets for secrets."],
+    ["Tool is used during restricted assessments", "Keep TutorAI identifiable, require manual activation, support a domain denylist, and do not implement concealment or proctoring bypass."],
+  ]}
+/>
+
+## Verification
+
+<Checklist
+  id="verification-checklist"
+  items={[
+    { id: "check-types", label: "Run lint, typecheck, unit tests, and production builds." },
+    { id: "check-contract", label: "Prove the successful API response cannot serialize answer, hint, explanation, or arbitrary model text fields." },
+    { id: "check-extension", label: "Load the unpacked extension and verify no API key appears in its bundle or storage." },
+    { id: "check-correct", label: "Select the fixture's correct page answer, click ?, and verify the card moves directly from Checking answer… to Correct." },
+    { id: "check-incorrect", label: "Select a wrong page answer, click ?, and verify Incorrect appears with no hint, explanation, or correct choice." },
+    { id: "check-retry", label: "Close, change the page selection, click ? again, and verify a fresh screenshot produces the new result." },
+    { id: "check-empty", label: "Clear the page selection and verify Select an answer first rather than Incorrect." },
+    { id: "check-capture", label: "Verify the screenshot excludes the open widget, no request occurs before ?, and the server retains no screenshot." },
+    { id: "check-accessibility", label: "Complete the flow by keyboard; verify Escape, focus restoration, labels, and status announcements." },
+    { id: "check-pages", label: "Verify graceful failure on restricted pages, ambiguous questions, and API timeout." },
+  ]}
+/>
+
+### Open Question
+
+<QuestionForm
+  id="open-questions"
+  questions={[
+    {
+      id: "distribution",
+      title: "Who is the first build for?",
+      subtitle: "This determines whether authentication and quotas enter the MVP.",
+      mode: "single",
+      options: [
+        { id: "personal", label: "Personal prototype", detail: "Private or local development first; fastest route to a working checker.", recommended: true },
+        { id: "public", label: "Public users", detail: "Requires sign-in, abuse prevention, usage limits, privacy policy, and store preparation." },
+      ],
+      required: true,
+    },
+  ]}
+  submitLabel="Save decision"
+/>

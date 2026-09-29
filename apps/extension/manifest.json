@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "TutorAI Answer Checker",
+  "version": "0.1.0",
+  "description": "Checks whether the answer selected on the visible page is correct or incorrect.",
+  "permissions": ["tabs", "scripting"],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "TutorAI Answer Checker"
+  }
+}
