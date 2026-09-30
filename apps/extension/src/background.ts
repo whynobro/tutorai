@@ -6,15 +6,23 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === "CAPTURE_VISIBLE_TAB") {
     void captureVisibleTab()
       .then((capture) => sendResponse({ ok: true, capture }))
-      .catch(() => sendResponse({ ok: false }));
+      .catch((error: unknown) =>
+        sendResponse({
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
     return true;
   }
 
   if (message?.type === "CHECK_CAPTURE") {
     void checkCapture(message.capture)
       .then(sendResponse)
-      .catch(() =>
-        sendResponse({ ok: false, body: { error: { reason: "unreadable" } } }),
+      .catch((error: unknown) =>
+        sendResponse({
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+        }),
       );
     return true;
   }

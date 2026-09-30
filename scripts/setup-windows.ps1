@@ -29,9 +29,9 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
 }
 
 $nodeVersion = (& node --version).Trim()
-$nodeMajor = [int]($nodeVersion.TrimStart("v").Split(".")[0])
-if ($nodeMajor -lt 22) {
-    Stop-Setup "TutorAI requires Node.js 22 or newer. Installed version: $nodeVersion"
+$nodeVersionParsed = [version]$nodeVersion.TrimStart("v")
+if ($nodeVersionParsed -lt [version]"22.13.0") {
+    Stop-Setup "TutorAI requires Node.js 22.13.0 or newer. Installed version: $nodeVersion"
 }
 
 Write-Host "Node.js $nodeVersion"

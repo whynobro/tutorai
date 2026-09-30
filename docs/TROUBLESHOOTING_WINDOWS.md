@@ -45,6 +45,12 @@ Select the `apps\extension\dist` folder, not the repository root. The selected f
 - Check whether another page element is covering the lower-right corner.
 - Open the extension card at `chrome://extensions` and inspect any red **Errors** button.
 
+## Course references are not being used
+
+- Set `COURSE_REFERENCE_DIR` in the project-root `.env` to the local folder containing the PDFs. Quote paths with spaces, for example `COURSE_REFERENCE_DIR='C:\Users\steen\Documents\Chemistry'`.
+- Restart `start-tutorai.cmd` after changing the path or adding PDFs.
+- At startup, the API prints how many PDFs and text passages it loaded. PDFs without extractable text (for example, image-only scans) need OCR before they can be searched.
+
 ## The result says “Checker is unavailable”
 
 - Start `start-tutorai.cmd` and leave the window open.
@@ -78,7 +84,7 @@ TutorAI also limits requests locally. Wait one minute if the checker was clicked
 Open `.env` and check:
 
 ```text
-OPENAI_MODEL=gpt-4.1-mini
+OPENAI_MODEL=gpt-5.4-mini
 ```
 
 If that model is unavailable to the API project, replace it with a vision-capable model available to that project that supports Structured Outputs. Restart the server after saving.

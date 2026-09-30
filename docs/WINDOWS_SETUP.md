@@ -23,7 +23,7 @@ Important: a ChatGPT Free, Plus, Pro, Team, or other ChatGPT subscription does n
 5. Finish the installation.
 6. Close and reopen any PowerShell or Command Prompt windows that were already open.
 
-TutorAI requires Node.js 22 or newer. The setup script checks this automatically.
+TutorAI requires Node.js 22.13.0 or newer. The setup script checks this automatically.
 
 ## Step 2: Get the TutorAI files
 

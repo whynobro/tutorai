@@ -1,8 +1,8 @@
 # TutorAI Answer Checker
 
-TutorAI is a small local Chrome/Edge extension. A learner selects an answer on a visible multiple-choice page, clicks the tiny `?` in the lower-right corner, and receives only **Correct** or **Incorrect**.
+TutorAI is a small local Chrome/Edge extension. A learner selects an answer on a visible multiple-choice page, clicks the tiny `?` in the lower-right corner, and receives **Correct** or **Incorrect** plus the canonical answer identified by the checker.
 
-It does not display the correct answer, provide hints, click answers, or submit work.
+It does not provide hints, click answers, or submit work.
 
 ## Windows quick start
 
@@ -16,8 +16,9 @@ The short version:
 2. Download this repository from [GitHub](https://github.com/whynobro/tutorai) and extract the ZIP.
 3. Double-click `setup-windows.cmd`.
 4. Put your own OpenAI API key in the generated `.env` file.
-5. Double-click `start-tutorai.cmd` and leave its window open.
-6. Open `chrome://extensions` or `edge://extensions`, enable **Developer mode**, select **Load unpacked**, and choose `apps\extension\dist`.
+5. Optionally set `COURSE_REFERENCE_DIR` in `.env` to a local folder containing course PDFs.
+6. Double-click `start-tutorai.cmd` and leave its window open.
+7. Open `chrome://extensions` or `edge://extensions`, enable **Developer mode**, select **Load unpacked**, and choose `apps\extension\dist`.
 
 Repository: **https://github.com/whynobro/tutorai**
 
@@ -34,7 +35,7 @@ Direct ZIP download: **https://github.com/whynobro/tutorai/archive/refs/heads/ma
 
 - Windows 10 or 11
 - Chrome or Microsoft Edge
-- Node.js 22 or newer (an LTS release is recommended)
+- Node.js 22.13.0 or newer (an LTS release is recommended)
 - An OpenAI Platform account, API key, and available API billing/credits
 - Permission to use screenshots and outside assistance on the pages where TutorAI is used
 
@@ -53,6 +54,14 @@ npm run start:api
 
 The API listens only on `127.0.0.1:8787`. Its health endpoint is `http://127.0.0.1:8787/health`.
 
+When `COURSE_REFERENCE_DIR` is set, the API extracts PDF text locally at startup and retrieves a few relevant passages for each question. Restart TutorAI after changing the folder or its PDFs.
+
+The default model is `gpt-5.4-mini`, with medium reasoning effort for answer solving. Set `OPENAI_MODEL` in `.env` to use another compatible model.
+
+## Improvement roadmap
+
+See [planned improvements](docs/IMPROVEMENTS.md) for known limitations and practical next steps.
+
 ## Project layout
 
 - `apps/extension` — Manifest V3 browser extension and compact UI
@@ -68,7 +77,8 @@ The API listens only on `127.0.0.1:8787`. Its health endpoint is `http://127.0.0
 - A screenshot is taken only after the user clicks `?`.
 - The application does not write screenshots to disk.
 - OpenAI Responses requests use `store: false`.
-- The extension receives only `correct`, `incorrect`, or a safe failure category.
+- Only retrieved course PDF passages, not whole files, are sent with a check request.
+- The extension receives the binary result, canonical answer, or a safe failure category.
 
 See [Privacy and Safety](docs/PRIVACY_AND_SAFETY.md) for the full explanation.
 

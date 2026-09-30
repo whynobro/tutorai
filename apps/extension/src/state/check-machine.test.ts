@@ -7,8 +7,9 @@ describe("check state machine", () => {
     const correct = reduceCheckState(checking, {
       type: "RESULT",
       result: "correct",
+      correctAnswer: "4",
     });
-    expect(correct).toEqual({ status: "correct" });
+    expect(correct).toEqual({ status: "correct", correctAnswer: "4" });
     expect(reduceCheckState(correct, { type: "CLOSE" })).toEqual({
       status: "collapsed",
     });

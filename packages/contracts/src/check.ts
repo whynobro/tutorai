@@ -17,6 +17,7 @@ export const checkRequestSchema = z.object({
 export const checkSuccessSchema = z
   .object({
     result: z.enum(["correct", "incorrect"]),
+    correctAnswer: z.string().min(1).max(2_000),
   })
   .strict();
 

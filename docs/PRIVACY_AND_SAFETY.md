@@ -4,10 +4,10 @@
 
 1. The extension temporarily hides its own interface.
 2. Chromium captures the currently visible tab viewport.
-3. The local API sends that image to the configured OpenAI model.
-4. The model privately analyzes one multiple-choice question and visible selection.
-5. The local API returns only `correct` or `incorrect`, or a safe failure category.
-6. This application does not write the screenshot or private answer analysis to disk.
+3. The local API sends the image to the configured OpenAI model to transcribe one question and its visible selection.
+4. If `COURSE_REFERENCE_DIR` is configured, the API searches local PDF text and sends only a few relevant excerpts with the image for the answer check.
+5. The API compares the selected choice with the model's canonical answer and returns `correct` or `incorrect`, the canonical answer, or a safe failure category.
+6. The API does not write screenshots, extracted PDF text, or private answer analysis to disk. Extracted reference text stays in memory while the API is running.
 
 No screenshot is taken while TutorAI is idle.
 
@@ -40,6 +40,8 @@ The extension bundle does not contain the key. Only the local API process reads 
 ## OpenAI processing
 
 TutorAI sends screenshots to the OpenAI Responses API with `store: false`. OpenAI's current platform data controls and abuse-monitoring policies still apply. Review them before use:
+
+When course references are enabled, retrieved excerpts are sent in the same API request as the screenshot. The PDF files are read locally and are not uploaded as complete documents.
 
 - https://platform.openai.com/docs/models/default-usage-policies-by-endpoint
 - https://openai.com/policies/privacy-policy/

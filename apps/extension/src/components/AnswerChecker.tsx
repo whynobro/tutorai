@@ -39,26 +39,48 @@ export function AnswerChecker({ host }: AnswerCheckerProps) {
     let capture: Awaited<ReturnType<typeof captureVisiblePage>>;
     try {
       capture = await captureVisiblePage();
-    } catch {
-      capture = { ok: false, reason: "network" };
+    } catch (error) {
+      capture = {
+        ok: false,
+        reason: "network",
+        detail: error instanceof Error ? error.message : String(error),
+      };
     } finally {
       host.style.visibility = "visible";
     }
 
     if (!capture.ok) {
-      dispatch({ type: "ERROR", message: errorMessages.network });
+      dispatch({
+        type: "ERROR",
+        message: capture.detail
+          ? `Capture failed: ${capture.detail}`
+          : errorMessages.network,
+      });
       return;
     }
 
     try {
       const response = await checkCapture(capture.capture);
       if (response.ok) {
-        dispatch({ type: "RESULT", result: response.result });
+        dispatch({
+          type: "RESULT",
+          result: response.result,
+          correctAnswer: response.correctAnswer,
+        });
       } else {
-        dispatch({ type: "ERROR", message: errorMessages[response.reason] });
+        dispatch({
+          type: "ERROR",
+          message:
+            response.reason === "network" && response.detail
+              ? `Check failed: ${response.detail}`
+              : errorMessages[response.reason],
+        });
       }
-    } catch {
-      dispatch({ type: "ERROR", message: errorMessages.network });
+    } catch (error) {
+      dispatch({
+        type: "ERROR",
+        message: `Check failed: ${error instanceof Error ? error.message : String(error)}`,
+      });
     }
   }
 
@@ -85,11 +107,11 @@ export function AnswerChecker({ host }: AnswerCheckerProps) {
   const label =
     state.status === "checking"
       ? "Checking answer…"
-      : state.status === "correct"
-        ? "Correct"
-        : state.status === "incorrect"
-          ? "Incorrect"
-          : state.message;
+      : state.status === "correct" || state.status === "incorrect"
+        ? state.status === "correct"
+          ? "Correct"
+          : "Incorrect"
+        : state.message;
 
   return (
     <section className="tutor-card" aria-label="TutorAI answer checker">
@@ -102,6 +124,11 @@ export function AnswerChecker({ host }: AnswerCheckerProps) {
           ×
         </button>
       </div>
+      {(state.status === "correct" || state.status === "incorrect") && (
+        <div className="tutor-answer">
+          <span className="tutor-answer-label">Correct answer:</span> {state.correctAnswer}
+        </div>
+      )}
       {state.status !== "checking" && (
         <button className="tutor-close-button" type="button" onClick={close}>
           {state.status === "correct" ? "Done" : "Close"}

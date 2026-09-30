@@ -43,6 +43,10 @@ if ($portInUse) {
 Write-Host "Starting the local API at http://127.0.0.1:8787" -ForegroundColor Green
 Write-Host "Leave this window open while using TutorAI. Press Ctrl+C to stop it.`n"
 
+# npm runs the API with apps\api as its working directory. Point dotenv back
+# to the project-root file that this launcher validated above.
+$env:DOTENV_CONFIG_PATH = $envPath
+
 & npm run start:api
 if ($LASTEXITCODE -ne 0) {
     Stop-Start "The API exited with an error. Read the message above and see docs\TROUBLESHOOTING_WINDOWS.md."

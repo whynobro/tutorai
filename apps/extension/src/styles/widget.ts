@@ -37,7 +37,8 @@ export const widgetCss = `
   }
 
   .tutor-card {
-    width: 184px;
+    width: 300px;
+    max-width: calc(100vw - 24px);
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -55,6 +56,8 @@ export const widgetCss = `
   .tutor-status--correct { color: #176b3a; }
   .tutor-status--incorrect { color: #9b2c2c; }
   .tutor-status--error { color: #5f6368; font-size: 11px; }
+  .tutor-answer { padding-left: 17px; font-size: 11px; line-height: 1.35; overflow-wrap: anywhere; }
+  .tutor-answer-label { font-weight: 600; }
 
   .tutor-icon-button {
     width: 18px;

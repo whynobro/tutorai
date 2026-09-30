@@ -1,10 +1,26 @@
 import "dotenv/config";
 import { createApp } from "./app.js";
+import { loadCourseReferences } from "./lib/course-references.js";
 import { createOpenAIImageChecker } from "./lib/openai.js";
 
 const port = Number(process.env.PORT ?? 8787);
 const confidenceThreshold = Number(process.env.CHECK_CONFIDENCE_THRESHOLD ?? 0.8);
-const checker = createOpenAIImageChecker();
+const courseReferenceDir = process.env.COURSE_REFERENCE_DIR;
+let references: Awaited<ReturnType<typeof loadCourseReferences>>;
+try {
+  references = await loadCourseReferences(courseReferenceDir);
+  if (courseReferenceDir) {
+    process.stdout.write(
+      `Loaded ${references.documentCount} course reference PDF(s) from ${courseReferenceDir} (${references.chunkCount} text passages).\n`,
+    );
+  }
+} catch (error) {
+  const reason = error instanceof Error ? error.message : String(error);
+  process.stderr.write(`TutorAI could not load course references: ${reason}\n`);
+  references = await loadCourseReferences(undefined);
+}
+
+const checker = createOpenAIImageChecker({ references, confidenceThreshold });
 const app = await createApp({ checker, confidenceThreshold });
 
 await app.listen({ host: "127.0.0.1", port });
