@@ -5,8 +5,7 @@
   "description": "Checks whether the answer selected on the visible page is correct or incorrect.",
   "permissions": ["tabs", "scripting"],
   "host_permissions": [
-    "http://*/*",
-    "https://*/*"
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "background.js",

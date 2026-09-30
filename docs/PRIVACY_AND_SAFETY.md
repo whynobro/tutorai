@@ -22,7 +22,7 @@ The visible viewport can contain names, grades, course names, account details, n
 
 ## Browser permissions
 
-The extension requests access to ordinary `http://` and `https://` pages because its in-page question-mark button must be present before it can request a visible-tab screenshot. It does not run on protected browser pages such as `chrome://` or `edge://` URLs.
+The extension's question-mark button runs only on ordinary `http://` and `https://` pages. Its host permission is `<all_urls>` because Chrome and Edge require that permission (or a toolbar click) before an extension can take a visible-tab screenshot. The screenshot is taken only after you click `?`. It does not run on protected browser pages such as `chrome://` or `edge://` URLs.
 
 The extension does not request webcam, microphone, browsing-history, download, clipboard, notification, or incognito permissions.
 
